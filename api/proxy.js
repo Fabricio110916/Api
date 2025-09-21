@@ -1,6 +1,6 @@
 import { createProxyServer } from "http-proxy";
 
-const target = "https://my.koom.pp.ua";
+const target = "https://my.koom.pp.ua/ws/";
 
 // Cria proxy
 const proxy = createProxyServer({
