@@ -14,6 +14,7 @@
   - action: Execute ./deploy.sh 137.131.139
     type: SSH_COMMAND
     commands:
+    - cd/root/docker
     - ./deploy.sh 137.131.139
     targets:
     - 137-131-138-10
