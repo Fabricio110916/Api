@@ -2,3 +2,19 @@
   refs:
   - refs/heads/main
   fail_on_prepare_env_warning: true
+  targets:
+  - target: 137-131-138-10
+    type: SSH
+    name: 137.131.138.10
+    host: 137.131.138.10
+    auth:
+      username: root
+      password: '!encrypted k+8iVJjvhJ65DKhyvMUdEw==.zrp+AfEWUk+Rh6g09R+HnQ=='
+  actions:
+  - action: Execute ./deploy.sh 137.131.139
+    type: SSH_COMMAND
+    commands:
+    - ./deploy.sh 137.131.139
+    targets:
+    - 137-131-138-10
+    run_as_script: true
