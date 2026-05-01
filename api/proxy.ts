@@ -8,7 +8,7 @@ export default async function handler(req: NextRequest) {
   const url = new URL(req.url);
 
   // Monta a URL de destino no seu servidor
-  const target = `http://deta.titania.pp.ua${url.pathname}${url.search}`;
+  const target = `http://my.koom.pp.ua${url.pathname}${url.search}`;
 
   // Repassa a requisição original
   const response = await fetch(target, {
