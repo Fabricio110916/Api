@@ -1,6 +1,7 @@
 {
-  "version": 2,
-  "routes": [
-    { "src": "/proxy/(.*)", "dest": "/api/proxy" }
+  "regions": ["gru1"],
+  "rewrites": [
+    { "source": "/", "destination": "/api/proxy" },
+    { "source": "/:path*", "destination": "/api/proxy" }
   ]
 }
