@@ -1,47 +1,64 @@
 import net from "net";
-import https from "https";
 
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-  keepAlive: true,
-});
+const TARGET_HOST = "137.131.176.224";
+const TARGET_PORT = 443;
+
+function parseFrame(body) {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
-  // 🔥 SSH OVER HTTP (CONNECT tunneling)
-  if (req.method === "CONNECT") {
-    const [host, port] = req.url.split(":");
+  let body = "";
 
-    const socket = net.connect(port, host, () => {
-      res.write("HTTP/1.1 200 Connection Established\r\n\r\n");
+  req.on("data", chunk => body += chunk);
 
-      // túnel bidirecional (SSH puro)
-      socket.pipe(res.socket);
-      res.socket.pipe(socket);
+  req.on("end", () => {
+    const frame = parseFrame(body);
+
+    if (!frame) {
+      return res.status(400).send("Invalid XHTTP frame");
+    }
+
+    // 🔥 DIRECIONAMENTO FIXO PARA SEU SERVIDOR
+    const socket = net.connect(TARGET_PORT, TARGET_HOST, () => {
+
+      res.writeHead(200, {
+        "Content-Type": "application/octet-stream",
+        "X-XHTTP": "1",
+        "X-Proxy": "active",
+        "Connection": "keep-alive"
+      });
+
+      // payload inicial (encapsulado)
+      if (frame.payload) {
+        const buffer = Buffer.from(frame.payload, "base64");
+        socket.write(buffer);
+      }
+
+      // 🔁 servidor → cliente
+      socket.on("data", (data) => {
+        res.write(data);
+      });
+
+      // 🔁 cliente → servidor (stream contínuo)
+      req.on("data", (chunk) => {
+        socket.write(chunk);
+      });
+
+      // cleanup
+      socket.on("close", () => res.end());
+      socket.on("error", () => res.end());
+      req.on("close", () => socket.destroy());
     });
 
     socket.on("error", () => {
-      res.writeHead(502);
-      res.end("Tunnel error");
+      res.status(502).end("Failed to reach backend server");
     });
-
-    return;
-  }
-
-  // 🌐 Proxy HTTP normal (seu código original simplificado)
-  const target = `https://137.131.176.224:443${req.url}`;
-
-  const options = {
-    method: req.method,
-    headers: req.headers,
-    agent,
-  };
-
-  const proxyReq = https.request(target, options, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
-    proxyRes.pipe(res);
   });
-
-  req.pipe(proxyReq);
 }
 
 export const config = {
