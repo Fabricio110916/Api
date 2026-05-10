@@ -28,6 +28,6 @@ const server = http.createServer((req, res) => {
     req.pipe(proxy);
 });
 
-server.listen(8080, () => {
-    console.log('Proxy rodando na porta 8080');
+server.listen(8282, () => {
+    console.log('Proxy rodando na porta 8282');
 });
