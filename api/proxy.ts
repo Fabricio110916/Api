@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
     const targetPath = req.query.path || "/";
 
-    const baseUrl = "http://137.131.176.224:443";
+    const baseUrl = "https://137.131.176.224:443";
     const url = baseUrl + targetPath;
 
     try {
