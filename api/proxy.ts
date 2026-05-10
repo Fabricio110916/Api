@@ -1,7 +1,7 @@
 import net from "net";
 import crypto from "crypto";
 
-const TARGET_HOST = "ws.koom.pp.ua";
+const TARGET_HOST = "xhttp.koom.pp.ua";
 const TARGET_PORT = 443;
 
 function parseBody(body) {
