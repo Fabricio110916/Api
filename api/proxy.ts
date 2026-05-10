@@ -1,16 +1,21 @@
 export default async function handler(req, res) {
-    const targetPath = req.query.path || "/ws/";
+    const path = req.query.path || "/";
+
+    // Só ativa proxy quando começa com /ws
+    if (!path.startsWith("/ws")) {
+        return res.status(200).send("Proxy ativo. Use /ws/");
+    }
 
     const baseUrl = "https://my.koom.pp.ua";
-    const url = baseUrl + targetPath;
+    const url = baseUrl + path;
 
     try {
         const response = await fetch(url, {
             method: req.method,
             headers: {
-                "User-Agent": "Mozilla/5.0",
+                "User-Agent": req.headers["user-agent"] || "Mozilla/5.0",
                 "Accept": "*/*",
-                "Host": "my.koom.pp.ua"
+                "Accept-Language": req.headers["accept-language"] || "*"
             }
         });
 
