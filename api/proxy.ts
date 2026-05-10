@@ -1,84 +1,33 @@
-import net from "net";
-import crypto from "crypto";
+const http = require('http');
+const https = require('https');
+const { URL } = require('url');
 
-const TARGET_HOST = "xhttp.koom.pp.ua";
-const TARGET_PORT = 443;
+const server = http.createServer((req, res) => {
+    const target = req.url.slice(1);
 
-function parseBody(body) {
-  try {
-    return JSON.parse(body);
-  } catch {
-    return null;
-  }
-}
-
-export default async function handler(req, res) {
-  let body = "";
-
-  req.on("data", chunk => body += chunk);
-
-  req.on("end", () => {
-    const frame = parseBody(body);
-
-    // ❌ INVALID FRAME → 400
-    if (!frame || frame.type !== "handshake") {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid XHTTP handshake"
-      });
+    if (!target.startsWith('http')) {
+        res.writeHead(400);
+        return res.end('Use /https://my.koom.pp.ua');
     }
 
-    // 🔥 cria sessão
-    const sessionId = crypto.randomUUID();
+    const url = new URL(target);
+    const lib = url.protocol === 'https:' ? https : http;
 
-    // 🔌 conecta no servidor final
-    const socket = net.connect(TARGET_PORT, TARGET_HOST);
+    const options = {
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        method: req.method,
+        headers: req.headers,
+    };
 
-    socket.on("connect", () => {
-
-      // ✅ handshake OK
-      res.writeHead(200, {
-        "Content-Type": "application/json",
-        "X-XHTTP": "1",
-        "X-Session": sessionId,
-        "Connection": "keep-alive"
-      });
-
-      res.end(JSON.stringify({
-        status: "ok",
-        session: sessionId,
-        transport: "tcp",
-        target: `${TARGET_HOST}:${TARGET_PORT}`
-      }));
-
-      // 🔁 CLIENT → SERVER (stream contínuo)
-      req.on("data", chunk => {
-        socket.write(chunk);
-      });
-
-      // 🔁 SERVER → CLIENT
-      socket.on("data", data => {
-        res.write(data);
-      });
+    const proxy = lib.request(options, (r) => {
+        res.writeHead(r.statusCode, r.headers);
+        r.pipe(res);
     });
 
-    socket.on("error", () => {
-      res.status(502).json({
-        status: "error",
-        message: "Backend unreachable"
-      });
-    });
+    req.pipe(proxy);
+});
 
-    socket.on("close", () => {
-      res.end();
-    });
-
-    req.on("close", () => socket.destroy());
-  });
-}
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+server.listen(8080, () => {
+    console.log('Proxy rodando na porta 8080');
+});
