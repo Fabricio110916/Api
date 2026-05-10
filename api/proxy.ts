@@ -1,9 +1,10 @@
 import net from "net";
+import crypto from "crypto";
 
 const TARGET_HOST = "137.131.176.224";
 const TARGET_PORT = 443;
 
-function parseFrame(body) {
+function parseBody(body) {
   try {
     return JSON.parse(body);
   } catch {
@@ -17,47 +18,62 @@ export default async function handler(req, res) {
   req.on("data", chunk => body += chunk);
 
   req.on("end", () => {
-    const frame = parseFrame(body);
+    const frame = parseBody(body);
 
-    if (!frame) {
-      return res.status(400).send("Invalid XHTTP frame");
+    // ❌ INVALID FRAME → 400
+    if (!frame || frame.type !== "handshake") {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid XHTTP handshake"
+      });
     }
 
-    // 🔥 DIRECIONAMENTO FIXO PARA SEU SERVIDOR
-    const socket = net.connect(TARGET_PORT, TARGET_HOST, () => {
+    // 🔥 cria sessão
+    const sessionId = crypto.randomUUID();
 
+    // 🔌 conecta no servidor final
+    const socket = net.connect(TARGET_PORT, TARGET_HOST);
+
+    socket.on("connect", () => {
+
+      // ✅ handshake OK
       res.writeHead(200, {
-        "Content-Type": "application/octet-stream",
+        "Content-Type": "application/json",
         "X-XHTTP": "1",
-        "X-Proxy": "active",
+        "X-Session": sessionId,
         "Connection": "keep-alive"
       });
 
-      // payload inicial (encapsulado)
-      if (frame.payload) {
-        const buffer = Buffer.from(frame.payload, "base64");
-        socket.write(buffer);
-      }
+      res.end(JSON.stringify({
+        status: "ok",
+        session: sessionId,
+        transport: "tcp",
+        target: `${TARGET_HOST}:${TARGET_PORT}`
+      }));
 
-      // 🔁 servidor → cliente
-      socket.on("data", (data) => {
-        res.write(data);
-      });
-
-      // 🔁 cliente → servidor (stream contínuo)
-      req.on("data", (chunk) => {
+      // 🔁 CLIENT → SERVER (stream contínuo)
+      req.on("data", chunk => {
         socket.write(chunk);
       });
 
-      // cleanup
-      socket.on("close", () => res.end());
-      socket.on("error", () => res.end());
-      req.on("close", () => socket.destroy());
+      // 🔁 SERVER → CLIENT
+      socket.on("data", data => {
+        res.write(data);
+      });
     });
 
     socket.on("error", () => {
-      res.status(502).end("Failed to reach backend server");
+      res.status(502).json({
+        status: "error",
+        message: "Backend unreachable"
+      });
     });
+
+    socket.on("close", () => {
+      res.end();
+    });
+
+    req.on("close", () => socket.destroy());
   });
 }
 
