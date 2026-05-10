@@ -1,56 +1,67 @@
+// V2Ray xhttp Vercel Proxy Handler
+// This Edge Function forwards all requests to the real V2Ray server
 export const config = {
-  runtime: 'edge', 
+  runtime: 'edge',
 };
 
-const BLOCKED_HEADERS = new Set([
-  'host', 'connection', 'x-forwarded-for',
-  'x-forwarded-host', 'x-forwarded-proto',
-  'x-vercel-id', 'x-vercel-cache',
-  'cdn-loop', 'cf-connecting-ip',
-]);
-
 export default async function handler(req) {
-  const url = new URL(req.url);
-  // O alvo agora utiliza o domínio verceledge.erosrss.pp.ua em vez do IP direto
-  const target = `http://my.koom.pp.ua:8282${url.pathname}${url.search}`;
-
-  const newHeaders = new Headers();
-  for (const [key, value] of req.headers.entries()) {
-    if (!BLOCKED_HEADERS.has(key.toLowerCase())) {
-      newHeaders.set(key, value);
-    }
-  }
-  
-  // Atualização do cabeçalho Host para coincidir com o novo domínio
-  newHeaders.set('host', 'my.koom.pp.ua');
-  newHeaders.set('connection', 'keep-alive');
-
-  const init = {
-    method: req.method,
-    headers: newHeaders,
-    redirect: 'manual',
-  };
-
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    init.body = req.body;
-    init.duplex = 'half'; 
-  }
-
   try {
-    const response = await fetch(target, init);
-
+    // Target V2Ray server
+    const TARGET_HOST = 'my.koom.pp.ua';
+    const TARGET_URL = https://${TARGET_HOST};
+    
+    // Parse the incoming URL to preserve path and query params
+    const url = new URL(req.url);
+    
+    // Construct target URL - preserve the full path including /xhttp
+    const targetPath = url.pathname + url.search;
+    const targetUrl = TARGET_URL + targetPath;
+    
+    // Prepare headers - forward most headers but update host
+    const headers = new Headers(req.headers);
+    headers.set('Host', TARGET_HOST);
+    
+    // Remove Vercel-specific headers that shouldn't be forwarded
+    headers.delete('x-vercel-id');
+    headers.delete('x-vercel-deployment-url');
+    headers.delete('x-vercel-forwarded-for');
+    
+    // Prepare fetch options
+    const fetchOptions = {
+      method: req.method,
+      headers: headers,
+      redirect: 'manual', // Don't follow redirects automatically
+    };
+    
+    // Add body for non-GET/HEAD requests
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      fetchOptions.body = req.body;
+    }
+    
+    // Forward the request to the real V2Ray server
+    const response = await fetch(targetUrl, fetchOptions);
+    
+    // Create response with same status and headers
     const responseHeaders = new Headers(response.headers);
-    responseHeaders.set('X-Accel-Buffering', 'no');
-    responseHeaders.set('Cache-Control', 'no-store');
-
+    
+    // Remove headers that might cause issues
+    responseHeaders.delete('content-encoding'); // Let Vercel handle encoding
+    
+    // Return the proxied response
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: responseHeaders,
     });
-
+    
   } catch (error) {
-    console.error('Proxy error:', error.message);
-    return new Response('Bad Gateway', { status: 502 });
+    console.error('Proxy error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Proxy error', 
+      message: error.message 
+    }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
