@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
     const targetPath = req.query.path || "/";
 
-    const baseUrl = "https://137.131.176.224:443";
+    const baseUrl = "https://my.koom.pp.ua";
     const url = baseUrl + targetPath;
 
     try {
@@ -9,7 +9,8 @@ export default async function handler(req, res) {
             method: req.method,
             headers: {
                 "User-Agent": "Mozilla/5.0",
-                "Accept": "*/*"
+                "Accept": "*/*",
+                "Host": "my.koom.pp.ua"
             }
         });
 
