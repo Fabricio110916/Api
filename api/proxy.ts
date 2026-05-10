@@ -1,32 +1,23 @@
-const https = require('https');
-const { URL } = require('url');
+export default async function handler(req, res) {
+    const targetPath = req.query.path || "/";
 
-const server = http.createServer((req, res) => {
-    const target = req.url.slice(1);
+    const baseUrl = "http://137.131.176.224:443";
+    const url = baseUrl + targetPath;
 
-    if (!target.startsWith('http')) {
-        res.writeHead(400);
-        return res.end('Use /https://my.koom.pp.ua');
+    try {
+        const response = await fetch(url, {
+            method: req.method,
+            headers: {
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "*/*"
+            }
+        });
+
+        const data = await response.text();
+
+        res.status(response.status).send(data);
+
+    } catch (err) {
+        res.status(500).send("Proxy error: " + err.message);
     }
-
-    const url = new URL(target);
-    const lib = url.protocol === 'https:' ? https : http;
-
-    const options = {
-        hostname: url.hostname,
-        path: url.pathname + url.search,
-        method: req.method,
-        headers: req.headers,
-    };
-
-    const proxy = lib.request(options, (r) => {
-        res.writeHead(r.statusCode, r.headers);
-        r.pipe(res);
-    });
-
-    req.pipe(proxy);
-});
-
-server.listen(443, () => {
-    console.log('Proxy rodando na porta 443');
-});
+}
