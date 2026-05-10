@@ -3,7 +3,7 @@ export default async function handler(req, res) {
 
     // Só ativa proxy quando começa com /ws
     if (!path.startsWith("/ws")) {
-        return res.status(200).send("Proxy ativo. Use /ws/");
+        return res.status(200).send("Proxy ativo. Use /");
     }
 
     const baseUrl = "https://my.koom.pp.ua";
