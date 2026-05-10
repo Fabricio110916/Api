@@ -9,7 +9,7 @@ export default async function handler(req, res) {
             method: req.method,
             headers: {
                 "User-Agent": "Mozilla/5.0",
-                "Accept": "*/*",
+                "Accept": "*/ws/*",
                 "Host": "my.koom.pp.ua"
             }
         });
