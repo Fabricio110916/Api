@@ -1,4 +1,3 @@
-const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
@@ -28,6 +27,6 @@ const server = http.createServer((req, res) => {
     req.pipe(proxy);
 });
 
-server.listen(8282, () => {
-    console.log('Proxy rodando na porta 8282');
+server.listen(443, () => {
+    console.log('Proxy rodando na porta 443');
 });
