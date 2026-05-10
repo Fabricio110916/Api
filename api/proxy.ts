@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
-    const targetPath = req.query.path || "/";
+    const targetPath = req.query.path || "/ws/";
 
-    const baseUrl = "https://my.koom.pp.ua";
+    const baseUrl = "https://cdn.edgeclaro.pp.ua";
     const url = baseUrl + targetPath;
 
     try {
@@ -9,8 +9,8 @@ export default async function handler(req, res) {
             method: req.method,
             headers: {
                 "User-Agent": "Mozilla/5.0",
-                "Accept": "*/ws/*",
-                "Host": "my.koom.pp.ua"
+                "Accept": "*/*",
+                "Host": "cdn.edgeclaro.pp.ua"
             }
         });
 
