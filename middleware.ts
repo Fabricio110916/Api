@@ -9,3 +9,7 @@ export function middleware(request: Request) {
     `https://my.koom.pp.ua${url.pathname}${url.search}`
   );
 }
+
+export const config = {
+  matcher: "/:path*",
+};
