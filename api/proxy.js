@@ -9,7 +9,7 @@ export default async function handler(req) {
   try {
     // Target V2Ray server
     const TARGET_HOST = '5wmkb0.azion.app';
-    const TARGET_URL = `https://${TARGET_HOST}`;
+    const TARGET_URL = 'https://${TARGET_HOST}';
 
     // Parse the incoming URL to preserve path and query params
     const url = new URL(req.url);
