@@ -8,7 +8,7 @@ export const config = {
 // DOMÍNIO DE DESTINO
 // Troque somente esta linha.
 // ========================================
-const TARGET_HOST = 'new.koom.pp.ua';
+const TARGET_HOST = 'avira.teknus.co.uk';
 
 export default async function handler(req) {
   try {
