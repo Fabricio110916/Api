@@ -2,13 +2,13 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/ws/:path*",
+      "source": "/:path*",
       "destination": "/api/proxy"
     }
   ],
   "headers": [
     {
-      "source": "/ws/:path*",
+      "source": "/:path*",
       "headers": [
         {
           "key": "Cache-Control",
