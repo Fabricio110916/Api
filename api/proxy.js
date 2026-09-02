@@ -1,57 +1,66 @@
-// V2Ray xhttp Vercel Proxy Handler
-// This Edge Function forwards all requests to the real V2Ray server
+// Vercel Proxy Handler
 
 export const config = {
   runtime: 'edge',
 };
 
+// ========================================
+// DOMÍNIO DE DESTINO
+// Troque somente esta linha.
+// ========================================
+const TARGET_HOST = 'new.koom.pp.ua';
+
 export default async function handler(req) {
   try {
-    // Target V2Ray server
-    const TARGET_HOST = 'new.koom.pp.ua';
-    const TARGET_URL = 'http://${TARGET_HOST}';
+    // URL de destino
+    const TARGET_URL = 'https://' + TARGET_HOST;
 
-    // Parse the incoming URL to preserve path and query params
+    // URL recebida pelo proxy
     const url = new URL(req.url);
 
-    // Construct target URL - preserve the full path
+    // Mantém o Path e os parâmetros da requisição
     const targetPath = url.pathname + url.search;
+
+    // Monta a URL final
     const targetUrl = TARGET_URL + targetPath;
 
-    // Prepare headers
+    // Copia os headers recebidos
     const headers = new Headers(req.headers);
+
+    // Define o Host do servidor de destino
     headers.set('Host', TARGET_HOST);
 
-    // Remove Vercel-specific headers
+    // Remove headers específicos da Vercel
     headers.delete('x-vercel-id');
     headers.delete('x-vercel-deployment-url');
     headers.delete('x-vercel-forwarded-for');
 
-    // Prepare fetch options
+    // Configuração da requisição
     const fetchOptions = {
       method: req.method,
       headers: headers,
-      redirect: 'manual',
+      redirect: 'manual'
     };
 
-    // Add body for non-GET/HEAD requests
+    // Encaminha o corpo quando necessário
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       fetchOptions.body = req.body;
     }
 
-    // Forward request
+    // Faz a requisição para o domínio configurado
     const response = await fetch(targetUrl, fetchOptions);
 
-    // Copy response headers
+    // Copia os headers da resposta
     const responseHeaders = new Headers(response.headers);
 
+    // Evita problemas de compressão
     responseHeaders.delete('content-encoding');
 
-    // Return proxied response
+    // Retorna a resposta para o cliente
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
-      headers: responseHeaders,
+      headers: responseHeaders
     });
 
   } catch (error) {
@@ -60,13 +69,13 @@ export default async function handler(req) {
     return new Response(
       JSON.stringify({
         error: 'Proxy error',
-        message: error.message,
+        message: error.message
       }),
       {
         status: 502,
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
